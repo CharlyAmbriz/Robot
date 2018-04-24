@@ -14,9 +14,12 @@ namespace Robot
 {
     class Program : GameWindow
     {
+        Vector2 lastMousePos = new Vector2();
+        Camara cam = new Camara();
         double radianes = Math.PI / 180;
         double x = 5.0, y = 5.0, z = 5.0, theta = 0.0, beta = 0.0;
-        float zNear = 1;
+        float zNear = 0.1f;
+        bool lockMouse = false;
 
         int textura;
 
@@ -28,17 +31,6 @@ namespace Robot
         static void Main(string[] args)
         {
             new Program().Run(60.0);
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            GL.Viewport(0, (Width - Height) / -2, Width, Height + (Width - Height));
-
-            GL.MatrixMode(MatrixMode.Projection);
-            GL.LoadIdentity();
-            
-            Matrix4 matrix = Matrix4.CreatePerspectiveFieldOfView((float) (45.0 * Math.PI / 180), Width / Height, zNear, 100);
-            GL.LoadMatrix(ref matrix);
         }
 
         protected override void OnLoad(EventArgs e)
@@ -67,19 +59,74 @@ namespace Robot
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
+            GL.Viewport(0, (Width - Height) / -2, Width, Height + (Width - Height));
+
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadIdentity();
+
+            Matrix4 matrix = cam.GetMatrizVista() * Matrix4.CreatePerspectiveFieldOfView((float)(90.0 * Math.PI / 180), Width / Height, zNear, 100);
+            GL.LoadMatrix(ref matrix);
+
+            if (lockMouse)
+            {
+                Vector2 delta = lastMousePos - new Vector2(OpenTK.Input.Mouse.GetState().X, OpenTK.Input.Mouse.GetState().Y);
+
+                cam.AgregarRotacion(delta.X, delta.Y);
+                ResetCursor();
+            }
+
             KeyboardState k = Keyboard.GetState();
 
             if (k.IsKeyDown(Key.Q))
-                if (k.IsKeyDown(Key.ShiftLeft))
+                if (k.IsKeyDown(Key.CapsLock))
                     theta -= 5.0;
                 else
                     theta += 5.0;
 
             if (k.IsKeyDown(Key.E))
-                if (k.IsKeyDown(Key.ShiftLeft))
+                if (k.IsKeyDown(Key.CapsLock))
                     beta -= 5.0;
                 else
                     beta += 5.0;
+
+            if (k.IsKeyDown(Key.Tab))
+            {
+                CursorVisible = !CursorVisible;
+                lockMouse = !lockMouse;
+            }
+
+            if (k.IsKeyDown(Key.W))
+                if (!k.IsKeyDown(Key.ShiftLeft))
+                    cam.Mover(0.0f, 0.1f, 0.0f, 0.0f);
+                else
+                    cam.Mover(0.0f, 0.1f, 0.0f, 0.3f);
+
+            if (k.IsKeyDown(Key.A))
+                if (!k.IsKeyDown(Key.ShiftLeft))
+                    cam.Mover(-0.1f, 0.0f, 0.0f, 0.0f);
+                else
+                    cam.Mover(-0.3f, 0.0f, 0.0f, 0.3f);
+
+            if (k.IsKeyDown(Key.S))
+                if (!k.IsKeyDown(Key.ShiftLeft))
+                    cam.Mover(0.0f, -0.1f, 0.0f, 0.0f);
+                else
+                    cam.Mover(0.0f, -0.3f, 0.0f, 0.3f);
+
+            if (k.IsKeyDown(Key.D))
+                if (!k.IsKeyDown(Key.ShiftLeft))
+                    cam.Mover(0.1f, 0.0f, 0.0f, 0.0f);
+                else
+                    cam.Mover(0.3f, 0.0f, 0.0f, 0.3f);
+
+            if (k.IsKeyDown(Key.Space))
+                cam.Mover(0.0f, 0.0f, 0.1f, 0.0f);
+
+            if (k.IsKeyDown(Key.ControlLeft))
+                cam.Mover(0.0f, 0.0f, -0.1f, 0.0f);
+
+            if (k.IsKeyDown(Key.Escape))
+                Exit();
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -88,10 +135,6 @@ namespace Robot
             GL.LoadIdentity();
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            GL.Translate(0.0, 0.0, -50.0);
-            GL.Rotate(25.0, 1.0, 0.0, 0.0);
-            GL.Rotate(-25.0, 0.0, 1.0, 0.0);
 
             DibujarLineas();
 
@@ -113,6 +156,14 @@ namespace Robot
             */
             
             SwapBuffers();
+        }
+
+        protected override void OnFocusedChanged(EventArgs e)
+        {
+            base.OnFocusedChanged(e);
+
+            if (lockMouse)
+                ResetCursor();
         }
 
         private void DibujarLineas()
@@ -300,6 +351,12 @@ namespace Robot
             bmp.UnlockBits(bmpData);
 
             return bmpData;
+        }
+
+        private void ResetCursor()
+        {
+            OpenTK.Input.Mouse.SetPosition(Bounds.Left + Bounds.Width / 2, Bounds.Top + Bounds.Height / 2);
+            lastMousePos = new Vector2(OpenTK.Input.Mouse.GetState().X, OpenTK.Input.Mouse.GetState().Y);
         }
     }   
 }
