@@ -55,7 +55,7 @@ namespace Robot
             GL.Enable(EnableCap.Texture2D);
             GL.GenTextures(1, out textura);
 
-            BitmapData texData = CargarImagen(@"C:\bloque.bmp");
+            BitmapData texData = CargarImagen("bloque.bmp");
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb,
                 texData.Width, texData.Height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Bgr, PixelType.UnsignedByte,
                 texData.Scan0);
