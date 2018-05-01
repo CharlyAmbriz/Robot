@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
@@ -19,7 +17,9 @@ namespace Robot
         double radianes = Math.PI / 180;
         double x = 5.0, y = 5.0, z = 5.0, theta = 0.0, beta = 0.0;
         float zNear = 0.1f;
-        bool lockMouse = false;
+        bool lockMouse = true;
+
+        Robot robot;
 
         int textura;
 
@@ -54,7 +54,11 @@ namespace Robot
 
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
-            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+            robot = new Robot();
+
+            CursorVisible = false;
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -64,7 +68,7 @@ namespace Robot
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
 
-            Matrix4 matrix = cam.GetMatrizVista() * Matrix4.CreatePerspectiveFieldOfView((float)(90.0 * Math.PI / 180), Width / Height, zNear, 100);
+            Matrix4 matrix = cam.GetMatrizVista() * Matrix4.CreatePerspectiveFieldOfView((float)(90.0 * Math.PI / 180), Width / Height, zNear, 50);
             GL.LoadMatrix(ref matrix);
 
             if (lockMouse)
@@ -131,6 +135,8 @@ namespace Robot
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
+            this.Title = $"(Vsync: {VSync}) FPS: {1f / e.Time:0}";
+
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
 
@@ -139,21 +145,17 @@ namespace Robot
             DibujarLineas();
 
             GL.PushMatrix();
-            GL.Rotate(theta, 0.0, 1.0, 0.0);
-            GL.Rotate(beta,  1.0, 0.0, 0.0);
-
-            GL.Scale(0.5, 0.5, 0.5);
-
+            GL.Translate(10, 1, 10);
             DibujarCubo();
             GL.PopMatrix();
-
+            
+            GL.PushMatrix();
+            GL.Rotate(theta, 0.0, 1.0, 0.0);
+            GL.Rotate(beta, 1.0, 0.0, 0.0);
+            robot.Dibujar();
+            GL.PopMatrix();
+            
             DibujarVidrio();
-            /*
-            GL.Scale(5.5, 5.5, 5.5);
-
-            GL.Color3(Color.White);
-            DibujarCono(5);
-            */
             
             SwapBuffers();
         }
@@ -174,11 +176,11 @@ namespace Robot
             {
                 GL.Color3(Color.Blue);
                 GL.Vertex3(-1.0, 0.0, 0.0);
-                GL.Vertex3(Width, 0.0, 0.0);
+                GL.Vertex3(100, 0.0, 0.0);
 
                 GL.Color3(Color.Red);
                 GL.Vertex3(0.0, -1.0, 0.0);
-                GL.Vertex3(0.0, Height, 0.0);
+                GL.Vertex3(0.0, 100, 0.0);
 
                 GL.Color3(Color.Yellow);
                 GL.Vertex3(0.0, 0.0, -1.0);
@@ -248,12 +250,12 @@ namespace Robot
             GL.Enable(EnableCap.Blend);
             GL.Begin(PrimitiveType.Quads);
             {
-                GL.Color4(0.1, 0.3, 1.0, 0.5);
+                GL.Color4(0.2, 0.2, 0.2, 0.3);
 
-                GL.Vertex3(-3, -3,  8);
-                GL.Vertex3(-3,  10, 8);
-                GL.Vertex3( 7,  10, 8);
-                GL.Vertex3( 7, -3,  8);
+                GL.Vertex3(-100, 0, -100);
+                GL.Vertex3(-100, 0,  100);
+                GL.Vertex3( 100, 0,  100);
+                GL.Vertex3( 100, 0, -100);
             }
             GL.End();
             GL.Disable(EnableCap.Blend);
@@ -262,6 +264,7 @@ namespace Robot
 
         private void DibujarCubo()
         {
+            GL.Enable(EnableCap.Texture2D);
             GL.Begin(PrimitiveType.Quads);
             {
                 GL.BindTexture(TextureTarget.Texture2D, textura);
@@ -271,75 +274,78 @@ namespace Robot
                 GL.Normal3(0.0, 0.0, 1.0);
 
                 GL.TexCoord2(0, 0);
-                GL.Vertex3(-10.0, -10.0, 10.0);
+                GL.Vertex3(-1.0, -1.0, 1.0);
                 GL.TexCoord2(1, 0);
-                GL.Vertex3(-10.0, 10.0, 10.0);
+                GL.Vertex3(-1.0, 1.0, 1.0);
                 GL.TexCoord2(1, 1);
-                GL.Vertex3(10.0, 10.0, 10.0);
+                GL.Vertex3(1.0, 1.0, 1.0);
                 GL.TexCoord2(0, 1);
-                GL.Vertex3(10.0, -10.0, 10.0);
+                GL.Vertex3(1.0, -1.0, 1.0);
 
                 // atras
                 GL.Normal3(0.0, 0.0, -1.0);
 
                 GL.TexCoord2(0, 0);
-                GL.Vertex3(-10.0, -10.0, -10.0);
+                GL.Vertex3(-1.0, -1.0, -1.0);
                 GL.TexCoord2(1, 0);
-                GL.Vertex3(-10.0, 10.0, -10.0);
+                GL.Vertex3(-1.0, 1.0, -1.0);
                 GL.TexCoord2(1, 1);
-                GL.Vertex3(10.0, 10.0, -10.0);
+                GL.Vertex3(1.0, 1.0, -1.0);
                 GL.TexCoord2(0, 1);
-                GL.Vertex3(10.0, -10.0, -10.0);
+                GL.Vertex3(1.0, -1.0, -1.0);
 
                 // arriba
                 GL.Normal3(0.0, 1.0, 0.0);
 
                 GL.TexCoord2(0, 0);
-                GL.Vertex3(-10.0, 10.0, 10.0);
+                GL.Vertex3(-1.0, 1.0, 1.0);
                 GL.TexCoord2(1, 0);
-                GL.Vertex3(-10.0, 10.0, -10.0);
+                GL.Vertex3(-1.0, 1.0, -1.0);
                 GL.TexCoord2(1, 1);
-                GL.Vertex3(10.0, 10.0, -10.0);
+                GL.Vertex3(1.0, 1.0, -1.0);
                 GL.TexCoord2(0, 1);
-                GL.Vertex3(10.0, 10.0, 10.0);
+                GL.Vertex3(1.0, 1.0, 1.0);
 
                 // abajo
                 GL.Normal3(0.0, -1.0, 0.0);
 
                 GL.TexCoord2(0, 0);
-                GL.Vertex3(-10.0, -10.0, 10.0);
+                GL.Vertex3(-1.0, -1.0, 1.0);
                 GL.TexCoord2(1, 0);
-                GL.Vertex3(-10.0, -10.0, -10.0);
+                GL.Vertex3(-1.0, -1.0, -1.0);
                 GL.TexCoord2(1, 1);
-                GL.Vertex3(10.0, -10.0, -10.0);
+                GL.Vertex3(1.0, -1.0, -1.0);
                 GL.TexCoord2(0, 1);
-                GL.Vertex3(10.0, -10.0, 10.0);
+                GL.Vertex3(1.0, -1.0, 1.0);
 
                 // derecha
                 GL.Normal3(-1.0, 0.0, 0.0);
 
                 GL.TexCoord2(0, 0);
-                GL.Vertex3(-10.0, 10.0, 10.0);
+                GL.Vertex3(-1.0, 1.0, 1.0);
                 GL.TexCoord2(1, 0);
-                GL.Vertex3(-10.0, 10.0, -10.0);
+                GL.Vertex3(-1.0, 1.0, -1.0);
                 GL.TexCoord2(1, 1);
-                GL.Vertex3(-10.0, -10.0, -10.0);
+                GL.Vertex3(-1.0, -1.0, -1.0);
                 GL.TexCoord2(0, 1);
-                GL.Vertex3(-10.0, -10.0, 10.0);
+                GL.Vertex3(-1.0, -1.0, 1.0);
 
                 // izquierda
                 GL.Normal3(1.0, 0.0, 0.0);
 
                 GL.TexCoord2(0, 0);
-                GL.Vertex3(10.0, 10.0, 10.0);
+                GL.Vertex3(1.0, 1.0, 1.0);
                 GL.TexCoord2(1, 0);
-                GL.Vertex3(10.0, 10.0, -10.0);
+                GL.Vertex3(1.0, 1.0, -1.0);
                 GL.TexCoord2(1, 1);
-                GL.Vertex3(10.0, -10.0, -10.0);
+                GL.Vertex3(1.0, -1.0, -1.0);
                 GL.TexCoord2(0, 1);
-                GL.Vertex3(10.0, -10.0, 10.0);
+                GL.Vertex3(1.0, -1.0, 1.0);
+
+                GL.BindTexture(TextureTarget.Texture2D, 0);
             }
             GL.End();
+            GL.Disable(EnableCap.Texture2D);
         }
 
         private BitmapData CargarImagen(string ruta)
